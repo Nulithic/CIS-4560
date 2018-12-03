@@ -1,7 +1,7 @@
 # CIS-4560
 Big Data Presentation
 
- -Database commands
+ -Database Commands
  
  -Group Paper
  
