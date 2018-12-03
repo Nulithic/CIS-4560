@@ -8,4 +8,4 @@ Big Data Presentation
  -Database Tutorial
 
  -CPU information
-  $ cat /proc/cpuinfo
+  n/$ cat /proc/cpuinfo
