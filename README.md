@@ -5,4 +5,4 @@ Big Data Presentation
  -Group Paper  
  -Database Tutorial  
  -CPU information  
-   $ cat /proc/cpuinfo
+     $ cat /proc/cpuinfo
