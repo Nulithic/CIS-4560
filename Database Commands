@@ -1,0 +1,59 @@
+
+CREATE EXTERNAL TABLE IF NOT EXISTS ChicagoCrimes(
+id BIGINT,
+case_number STRING,
+`date` STRING, 
+block STRING,
+iucr STRING,
+primary_type STRING,
+description STRING,
+location_description STRING,
+arrest STRING,
+domestic STRING,
+beat STRING,
+district STRING,
+ward STRING,
+community_area INT,
+fbi_code STRING,
+x_coordinate BIGINT,
+y_coordinate BIGINT,
+year INT,
+updated_on STRING,
+latitude FLOAT,
+longitude FLOAT)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+STORED AS TEXTFILE LOCATION '/user/tlieu/ChicagoCrimes'
+TBLPROPERTIES ('skip.header.line.count'='1');
+
+
+SELECT primary_type, COUNT(*)
+FROM chicagocrimes
+GROUP BY primary_type;
+
+
+//A temporary table to change `date` format and data type.
+CREATE TABLE cc AS SELECT 
+id,
+case_number,
+FROM_UNIXTIME(UNIX_TIMESTAMP(`date`, 'dd/mm/yyyy h:mm:ss a')) as `date`, 
+block,
+iucr,
+primary_type,
+description,
+location_description,
+arrest,
+domestic,
+beat,
+district,
+ward,
+community_area,
+fbi_code,
+x_coordinate,
+y_coordinate,
+year,
+updated_on,
+latitude,
+longitude
+FROM chicagocrimes;
+
+ALTER TABLE cc CHANGE COLUMN `date` `date` TIMESTAMP;
