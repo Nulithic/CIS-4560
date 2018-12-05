@@ -78,6 +78,14 @@ WHERE primary_type ='THEFT'
 GROUP BY date_format(`date`, "hh:00 aa")
 ORDER BY theft;
 
+//Query to find the date with the most theifts commited.
+SELECT date_format(`date`, 'YYYY-MM-DD') as `date`, COUNT(*) AS `count`
+FROM cc
+WHERE date_format(`date`, "HH:mm") BETWEEN '09:00' and '21:00'
+AND primary_type ='THEFT'
+GROUP BY date_format(`date`, 'YYYY-MM-DD')
+ORDER BY `count`;
+
 //Created another temporary table for thefts commited between 9:00 AM and 9:00 PM.
 CREATE TABLE tt AS SELECT 
 id,
@@ -85,7 +93,7 @@ case_number,
 `date`, 
 block,
 iucr,
-primary_type as crime,
+primary_type AS crime,
 description,
 location_description,
 arrest,
@@ -106,13 +114,13 @@ WHERE date_format(`date`, "HH:mm") BETWEEN '09:00' and '21:00'
 AND primary_type ='THEFT';
 
 //Output table for timelapse and heatmap of thefts between 9:00 AM and 9:00 PM.
-CREATE TABLE thefts 
+CREATE TABLE oneday 
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 STORED AS TEXTFILE LOCATION '/user/tlieu/ChicagoCrimes'
 AS SELECT 
 id,
 case_number,
-date_format(`date`, "hh:mm aa") as time, 
+`date`, 
 block,
 iucr,
 crime,
@@ -131,7 +139,8 @@ year,
 updated_on,
 latitude,
 longitude
-FROM tt;
+FROM tt
+WHERE `date` LIKE date_format(`date`, '2004-01-08%');
 
 hdfs dfs -get /user/[username]/ChicagoCrimes/0000*_0
 ls -al
