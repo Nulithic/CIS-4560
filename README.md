@@ -1,5 +1,5 @@
 # CIS-4560
-Big Data Presentation
+Chicago Crimes - Big Data Project
 
 <pre>
 -Database Commands  
