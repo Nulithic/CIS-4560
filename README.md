@@ -1,5 +1,5 @@
 # CIS-4560
-Group 5 - Tony Lieu / Kevin Chea
+Group 5 - Tony Lieu / Kevin Chea  
 Chicago Crimes - Big Data Project
 
 <pre>
