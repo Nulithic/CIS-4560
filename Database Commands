@@ -4,9 +4,12 @@ hdfs dfs -mkdir ChicagoCrimes
 hdfs dfs -put ChicagoCrimes.csv ChicagoCrimes/
 hdfs dfs -chmod -R o+w .
 
+$ beeline
+!connect jdbc:hive2://cis4560-bdcsce-4.compute-608214094.oraclecloud.internal:2181,cis4560-bdcsce-2.compute-608214094.oraclecloud.internal:2181,cis4560-bdcsce-3.compute-608214094.oraclecloud.internal:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2?tez.queue.name=interactive bdcsce_admin
+
 use [username];
 
-CREATE EXTERNAL TABLE IF NOT EXISTS ChicagoCrimes(
+CREATE EXTERNAL TABLE IF NOT EXISTS chicagocrimes(
 id BIGINT,
 case_number STRING,
 `date` STRING, 
@@ -29,22 +32,23 @@ updated_on STRING,
 latitude FLOAT,
 longitude FLOAT)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-STORED AS TEXTFILE LOCATION '/user/tlieu/ChicagoCrimes'
-TBLPROPERTIES ('skip.header.line.count'='1');
+STORED AS TEXTFILE LOCATION '/user/tlieu/ChicagoCrimes';
 
 //Query to find count of each crime.
-SELECT primary_type, COUNT(*)
+SELECT primary_type, COUNT(*) as `count`
 FROM chicagocrimes
-GROUP BY primary_type;
+GROUP BY primary_type
+ORDER BY `count`;
 
 //Query for each type of theft
-SELECT description, COUNT(*) AS `count`
+SELECT primary_type, description, COUNT(*) AS `count`
 FROM chicagocrimes
-GROUP BY description
+WHERE primary_type ='THEFT'
+GROUP BY primary_type, description
 ORDER BY `count`;
 
 //A temporary table to change `date` format and data type.
-CREATE TABLE cc AS SELECT 
+CREATE TABLE time_cc AS SELECT 
 id,
 case_number,
 FROM_UNIXTIME(UNIX_TIMESTAMP(`date`, 'dd/mm/yyyy h:mm:ss a')) AS `date`, 
@@ -69,25 +73,28 @@ longitude
 FROM chicagocrimes;
 
 //Changing `date` from STRING to TIMESTAMP.
-ALTER TABLE cc CHANGE COLUMN `date` `date` TIMESTAMP;
+ALTER TABLE time_cc CHANGE COLUMN `date` `date` TIMESTAMP;
 
 //Query to find the count of thefts in each hour.
-SELECT count(primary_type) AS theft, date_format(`date`, "hh:00 aa") AS time
-FROM cc 
+SELECT count(primary_type) as theft, date_format(`date`, "hh:00 aa") as time
+FROM time_cc
 WHERE primary_type ='THEFT' 
 GROUP BY date_format(`date`, "hh:00 aa")
 ORDER BY theft;
 
 //Query to find the date with the most theifts commited.
 SELECT date_format(`date`, 'YYYY-MM-DD') as `date`, COUNT(*) AS `count`
-FROM cc
+FROM time_cc
 WHERE date_format(`date`, "HH:mm") BETWEEN '09:00' and '21:00'
 AND primary_type ='THEFT'
 GROUP BY date_format(`date`, 'YYYY-MM-DD')
 ORDER BY `count`;
 
-//Created another temporary table for thefts commited between 9:00 AM and 9:00 PM.
-CREATE TABLE tt AS SELECT 
+//Output table for timelapse and heatmap of thefts between 9:00 AM and 9:00 PM.
+CREATE TABLE time_theft 
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+STORED AS TEXTFILE LOCATION '/user/tlieu/ChicagoCrimes'
+AS SELECT 
 id,
 case_number,
 `date`, 
@@ -109,41 +116,12 @@ year,
 updated_on,
 latitude,
 longitude
-FROM cc 
-WHERE date_format(`date`, "HH:mm") BETWEEN '09:00' and '21:00'
+FROM time_cc
+WHERE date_format(`date`, "yyyy-MM-dd HH:mm:ss") BETWEEN '2001-01-08 09:00:00' and '2001-01-08 21:00:00'
 AND primary_type ='THEFT';
-
-//Output table for timelapse and heatmap of thefts between 9:00 AM and 9:00 PM.
-CREATE TABLE oneday 
-ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-STORED AS TEXTFILE LOCATION '/user/tlieu/ChicagoCrimes'
-AS SELECT 
-id,
-case_number,
-`date`, 
-block,
-iucr,
-crime,
-description,
-location_description,
-arrest,
-domestic,
-beat,
-district,
-ward,
-community_area,
-fbi_code,
-x_coordinate,
-y_coordinate,
-year,
-updated_on,
-latitude,
-longitude
-FROM tt
-WHERE `date` LIKE date_format(`date`, '2004-01-08%');
 
 hdfs dfs -get /user/[username]/ChicagoCrimes/0000*_0
 ls -al
-cat 0000*_0 > thefts.csv
+cat 0000*_0 > theftrange.csv
 
-scp [username]@[ip_address]:/home/[username]/thefts.csv thefts.csv
+scp [username]@[ip_address]:/home/[username]/theftrange.csv theftrange.csv
